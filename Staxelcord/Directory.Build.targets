@@ -1,0 +1,44 @@
+﻿<Project DefaultTargets="Build">
+    <PropertyGroup>
+        <!-- If no custom mod name has been set, fallback to assembly name. -->
+        <StaxelModName Condition="'$(StaxelModName)' == ''">$(AssemblyName)</StaxelModName>
+    </PropertyGroup>
+    
+    <Target Name="ValidateStaxelBin" BeforeTargets="Build">
+        <!-- If the StaxelBin property has not been set, throw an error -->
+        <Error
+            Condition="'$(StaxelBin)' == ''"
+            Text="Please specify your Staxel bin directory."
+        />
+        <!-- If the StaxelBin location does not exist, throw an error -->
+        <Error
+            Condition="!Exists('$(StaxelBin)')"
+            Text="Could not locate Staxel bin directory. Please check your StaxelBin property and try again."
+        />
+        <!-- If the Staxel assemblies are missing, throw an error -->
+        <Error
+            Condition="!Exists('$(StaxelBin)\Plukit.Base.dll') Or !Exists('$(StaxelBin)\Staxel.dll')"
+            Text="Could not locate the required assemblies. Please check your StaxelBin property and try again. Alternatively, verify integrity of game files."
+        />
+    </Target>
+    
+    <Target Name="DeployToStaxelBin" AfterTargets="Build">  
+        <!-- Copy newly-built assembly to Staxel bin directory -->
+        <Copy
+            SourceFiles="$(TargetDir)$(AssemblyName).dll"
+            DestinationFolder="$(StaxelBin)"
+        />
+        <!-- Create mod file for assembly in Staxel bin directory -->
+        <WriteLinesToFile
+            File="$(StaxelBin)\$(AssemblyName).mod"
+            Lines="{}"
+        />
+        <!-- Copy mod assets to mods directory -->
+        <Copy
+            Condition="Exists('$(MSBuildProjectDirectory)\Staxel')"
+            SourceFiles="@(StaxelModAssets)"
+            DestinationFolder="$(StaxelBin)\..\content\mods\$(StaxelModName)"
+            SkipUnchangedFiles="true"
+        />
+    </Target>
+</Project>
